@@ -4,16 +4,22 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.KeyEvent;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+import com.inca.administrator.opensourcelibrary.utils.ToastUtils;
 import com.inca.lyretrospect.R;
 import com.inca.lyretrospect.common.JSInterface;
 import com.inca.lyretrospect.global.TFBaseActivity;
@@ -64,6 +70,33 @@ public class WebViewActivity extends TFBaseActivity{
         }
 
         return false;
+    }
+    //    回调获取扫描得到的条码值
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if(result != null) {
+            final int version = Build.VERSION.SDK_INT;
+            if(result.getContents() == null) {
+                Toast.makeText(this, "扫码取消！", Toast.LENGTH_LONG).show();
+            } else {
+                if (version < 18) {
+                    webView.loadUrl("javascript:selectByCutNo('"+result.getContents()+"')");
+                } else {
+                    webView.evaluateJavascript("javascript:selectByCutNo('"+result.getContents()+"')", new ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String value) {
+                            //此处为 js 返回的结果
+//                            ToastUtils.showToast(WebViewActivity.this,"js");
+                        }
+                    });
+                }
+
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     //自定义的webViewClient
